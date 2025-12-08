@@ -24,6 +24,12 @@
 #include <set>
 #endif
 
+#ifdef HPCG_OSHMEM
+#include <shmem.h>
+#include <map>
+#include <set>
+#endif
+
 #ifndef HPCG_NO_OPENMP
 #include <omp.h>
 #endif

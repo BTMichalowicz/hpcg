@@ -24,6 +24,10 @@
 #include "ExchangeHalo.hpp"
 #endif
 
+#ifdef HPCG_OSHMEM
+#include "ExchangeHalo.cpp"
+#endif
+
 #ifndef HPCG_NO_OPENMP
 #include <omp.h>
 #endif

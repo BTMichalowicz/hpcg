@@ -22,6 +22,10 @@
 #include <mpi.h>
 #endif
 
+#ifdef HPCG_SHMEM
+#include <shmem.h>
+#endif
+
 #ifndef HPCG_NO_OPENMP
 #include <omp.h>
 #endif
@@ -137,11 +141,35 @@ void CheckProblem(SparseMatrix & A, Vector * b, Vector * x, Vector * xexact) {
   long long lnnz = localNumberOfNonzeros, gnnz = 0; // convert to 64 bit for MPI call
   MPI_Allreduce(&lnnz, &gnnz, 1, MPI_LONG_LONG_INT, MPI_SUM, MPI_COMM_WORLD);
   totalNumberOfNonzeros = gnnz; // Copy back
+  goto asserts;
 #endif
-#else
-  totalNumberOfNonzeros = localNumberOfNonzeros;
 #endif
 
+#ifdef HPCG_OSHMEM
+#ifdef HPCG_NO_LONG_LONG
+  int *tot_non_zeros = shmem_malloc(sizeof(int));
+  const int *local_non_zeros = shmem_malloc(sizeof(int));
+  *local_non_zeros = localNumberOfNonzeros;
+  shmem_int_sum_reduce(SHMEM_TEAM_WORLD, tot_non_zeros, local_non_zeros, 1);
+  totalNumberOfNonzeros = *tot_non_zeros;
+
+  shmem_free(tot_non_zeros);
+  shmem_free(local_non_zeros);
+#else
+  long long *lnnz = shmem_malloc(sizeof(long)), 
+       *global_nnz = shmem_malloc=(sizeof(long));
+  *lnnz = localNumberOfNonzeros;
+  shmem_long_long(SHMEM_TEAM_WORLD, global_nnz, lnnz, 1);
+  totalNumberOfNonzeros = global_nnz;
+  shmem_free(lnnz);
+  shmem_free(global_nnz);
+  goto asserts;
+#endif
+#endif
+
+  totalNumberOfNonzeros = localNumberOfNonzeros;
+
+asserts:
   assert(A.totalNumberOfRows == totalNumberOfRows);
   assert(A.totalNumberOfNonzeros == totalNumberOfNonzeros);
   assert(A.localNumberOfRows == localNumberOfRows);

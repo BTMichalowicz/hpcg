@@ -23,6 +23,9 @@
 #ifndef HPCG_NO_OPENMP
 #include <omp.h>
 #endif
+#ifdef HPCG_OSHMEM
+#include <shmem.h>
+#endif
 
 #include "Vector.hpp"
 
@@ -81,9 +84,19 @@ int ComputeResidual(const local_int_t n, const Vector & v1, const Vector & v2, d
   double global_residual = 0;
   MPI_Allreduce(&local_residual, &global_residual, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   residual = global_residual;
+#elif defined(HPCG_OSHMEM)
+  double *glbl = shmem_malloc(sizeof(double));
+  double *local = shmem_malloc(sizeof(double));
+  *local = local_residual;
+  shmem_double_max_reduce(SHMEM_TEAM_WORLD, glbl, local 1);
+  residual = *glbl;
+  shmem_free(glbl);
+  shmem_free(local);
 #else
   residual = local_residual;
 #endif
+
+
 
   return 0;
 }

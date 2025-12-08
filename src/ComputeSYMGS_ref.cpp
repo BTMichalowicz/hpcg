@@ -21,6 +21,9 @@
 #ifndef HPCG_NO_MPI
 #include "ExchangeHalo.hpp"
 #endif
+#ifdef HPCG_OSHMEM
+#include "ExchangeHalo.cpp"
+#endif
 #include "ComputeSYMGS_ref.hpp"
 #include <cassert>
 
@@ -56,6 +59,9 @@ int ComputeSYMGS_ref( const SparseMatrix & A, const Vector & r, Vector & x) {
   assert(x.localLength==A.localNumberOfColumns); // Make sure x contain space for halo values
 
 #ifndef HPCG_NO_MPI
+  ExchangeHalo(A,x);
+#endif
+#ifdef HPCG_OSHMEM
   ExchangeHalo(A,x);
 #endif
 

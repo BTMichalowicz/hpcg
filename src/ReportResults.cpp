@@ -22,6 +22,10 @@
 #include <mpi.h>
 #endif
 
+#ifdef HPCG_OSHMEM
+#include <shmem.h>
+#endif
+
 #include <vector>
 #include "ReportResults.hpp"
 #include "OutputFile.hpp"

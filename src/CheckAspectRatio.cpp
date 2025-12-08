@@ -23,6 +23,10 @@
 #include <mpi.h>
 #endif
 
+#ifdef HCPCG_OSHMEM
+#include <shmem.h>
+#endif
+
 #include "hpcg.hpp"
 
 #include "CheckAspectRatio.hpp"
@@ -42,6 +46,9 @@ CheckAspectRatio(double smallest_ratio, int x, int y, int z, const char *what, b
 
 #ifndef HPCG_NO_MPI
     MPI_Abort(MPI_COMM_WORLD, 127);
+#endif
+#ifdef HPCG_OSHMEM
+    shmem_global_exit(127);
 #endif
 
     return 127;

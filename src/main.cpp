@@ -25,6 +25,10 @@
 #include <mpi.h>
 #endif
 
+#ifdef HPCG_OSHMEM
+#include <shmem.h>
+#endif
+
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
