@@ -21,7 +21,7 @@
 /////////////////////////////////////////////////////////////////////////
 
 #ifndef HPCG_NO_MPI
-#include <mpi.h>
+#include <shmem.h>
 
 double mytimer(void) {
   return MPI_Wtime();

@@ -19,7 +19,7 @@
  */
 
 #ifndef HPCG_NO_MPI
-#include <mpi.h>
+#include <shmem.h>
 #include <map>
 #include <set>
 #endif

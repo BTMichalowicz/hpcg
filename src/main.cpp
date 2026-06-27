@@ -22,7 +22,7 @@
 // solver to solve the problem, and then prints results.
 
 #ifndef HPCG_NO_MPI
-#include <mpi.h>
+#include <shmem.h>
 #endif
 
 #ifdef HPCG_OSHMEM
@@ -77,7 +77,7 @@ using std::endl;
 int main(int argc, char * argv[]) {
 
 #ifndef HPCG_NO_MPI
-  MPI_Init(&argc, &argv);
+  shmem_init(); //MPI_Init(&argc, &argv);
 #endif
 
   HPCG_Params params;
@@ -99,7 +99,7 @@ int main(int argc, char * argv[]) {
     std::cin.get(c);
   }
 #ifndef HPCG_NO_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
+  shmem_barrier_all(); //MPI_Barrier(MPI_COMM_WORLD);
 #endif
 #endif
 
@@ -277,7 +277,8 @@ int main(int argc, char * argv[]) {
 
   int optMaxIters = 10*refMaxIters;
   int optNiters = refMaxIters;
-  double opt_worst_time = 0.0;
+  double opt_worst_time = shmem_malloc(sizeof(double));
+  *opt_worst_time = 0.0;
 
   std::vector< double > opt_times(9,0.0);
 
@@ -294,13 +295,15 @@ int main(int argc, char * argv[]) {
     if (niters > optNiters) optNiters = niters;
 
     double current_time = opt_times[0] - last_cummulative_time;
-    if (current_time > opt_worst_time) opt_worst_time = current_time;
+    if (current_time > (*opt_worst_time)) opt_worst_time[0] = current_time;
   }
 
 #ifndef HPCG_NO_MPI
 // Get the absolute worst time across all MPI ranks (time in CG can be different)
-  double local_opt_worst_time = opt_worst_time;
-  MPI_Allreduce(&local_opt_worst_time, &opt_worst_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  double *local_opt_worst_time = shmem_malloc(2*sizeof(double)); //= opt_worst_time;
+  *local_opt_worst_time = *opt_worst_time;
+  shmem_double_max_reduce(SHMEM_TEAM_WORLD, opt_worst_time, local_opt_worst_time, 1); 
+  //MPI_Allreduce(&local_opt_worst_time, &opt_worst_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
 
@@ -319,7 +322,7 @@ int main(int argc, char * argv[]) {
   // The variable total_runtime is the target benchmark execution time in seconds
 
   double total_runtime = params.runningTime;
-  int numberOfCgSets = int(total_runtime / opt_worst_time) + 1; // Run at least once, account for rounding
+  int numberOfCgSets = int(total_runtime / (*opt_worst_time)) + 1; // Run at least once, account for rounding
 
 #ifdef HPCG_DEBUG
   if (rank==0) {
@@ -379,7 +382,7 @@ int main(int argc, char * argv[]) {
 
   // Finish up
 #ifndef HPCG_NO_MPI
-  MPI_Finalize();
+  shmem_finalize(); //MPI_Finalize();
 #endif
   return 0;
 }

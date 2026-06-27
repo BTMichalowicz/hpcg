@@ -13,7 +13,7 @@
 //@HEADER
 
 #ifndef HPCG_NO_MPI
-#include <mpi.h>
+#include <shmem.h>
 #endif
 #ifdef HPCG_OSHMEM
 #include <shmem.h>
@@ -79,7 +79,7 @@ HPCG_Init(int * argc_p, char ** *argv_p, HPCG_Params & params) {
   const int nparams = (sizeof cparams) / (sizeof cparams[0]);
   bool broadcastParams = false; // Make true if parameters read from file.
 
-  iparams = (int *)malloc(sizeof(int) * nparams);
+  iparams = (int *)shmem_malloc(sizeof(int) * (nparams+8));
 
   // Initialize iparams
   for (i = 0; i < nparams; ++i) iparams[i] = 0;
@@ -117,7 +117,9 @@ HPCG_Init(int * argc_p, char ** *argv_p, HPCG_Params & params) {
 // Broadcast values of iparams to all MPI processes
 #ifndef HPCG_NO_MPI
   if (broadcastParams) {
-    MPI_Bcast( iparams, nparams, MPI_INT, 0, MPI_COMM_WORLD );
+
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, iparams, iparams, nparams);
+    //MPI_Bcast( iparams, nparams, MPI_INT, 0, MPI_COMM_WORLD );
   }
 #endif
 
@@ -135,8 +137,10 @@ HPCG_Init(int * argc_p, char ** *argv_p, HPCG_Params & params) {
   params.npz = iparams[9];
 
 #ifndef HPCG_NO_MPI
-  MPI_Comm_rank( MPI_COMM_WORLD, &params.comm_rank );
-  MPI_Comm_size( MPI_COMM_WORLD, &params.comm_size );
+  params.comm_rank = shmem_my_pe();
+  // MPI_Comm_rank( MPI_COMM_WORLD, &params.comm_rank );
+  params.comm_size = shmem_n_pes(); 
+  //MPI_Comm_size( MPI_COMM_WORLD, &params.comm_size );
 #else
   params.comm_rank = 0;
   params.comm_size = 1;
@@ -167,7 +171,7 @@ HPCG_Init(int * argc_p, char ** *argv_p, HPCG_Params & params) {
 #endif
   }
 
-  free( iparams );
+  shmem_free( iparams );
 
   return 0;
 }

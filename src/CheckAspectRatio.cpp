@@ -20,7 +20,7 @@
 #include <algorithm>
 
 #ifndef HPCG_NO_MPI
-#include <mpi.h>
+#include <shmem.h>
 #endif
 
 #ifdef HCPCG_OSHMEM

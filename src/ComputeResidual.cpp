@@ -18,7 +18,7 @@
  HPCG routine
  */
 #ifndef HPCG_NO_MPI
-#include <mpi.h>
+#include <shmem.h>
 #endif
 #ifndef HPCG_NO_OPENMP
 #include <omp.h>
