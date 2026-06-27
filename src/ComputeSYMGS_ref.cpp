@@ -22,7 +22,7 @@
 #include "ExchangeHalo.hpp"
 #endif
 #ifdef HPCG_OSHMEM
-#include "ExchangeHalo.cpp"
+#include "ExchangeHalo.hpp"
 #endif
 #include "ComputeSYMGS_ref.hpp"
 #include <cassert>

@@ -110,12 +110,11 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
 
   return;
 }
-#endif
-// ifndef HPCG_NO_MPIi
+#elif defined (HPCG_OSHMEM)
+// ifndef HPCG_NO_MPI
 //
 
 // Compile this routine only if running with OpenSHMEM
-#ifdef HPCG_OSHMEM
 #include <shmem.h>
 #include "Geometry.hpp"
 #include "ExchangeHalo.hpp"

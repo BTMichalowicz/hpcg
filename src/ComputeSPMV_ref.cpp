@@ -25,7 +25,7 @@
 #endif
 
 #ifdef HPCG_OSHMEM
-#include "ExchangeHalo.cpp"
+#include "ExchangeHalo.hpp"
 #endif
 
 #ifndef HPCG_NO_OPENMP
@@ -54,6 +54,8 @@ int ComputeSPMV_ref( const SparseMatrix & A, Vector & x, Vector & y) {
   assert(y.localLength>=A.localNumberOfRows);
 
 #ifndef HPCG_NO_MPI
+    ExchangeHalo(A,x);
+#elif defined(HPCG_OSHMEM)
     ExchangeHalo(A,x);
 #endif
   const double * const xv = x.values;
