@@ -277,7 +277,15 @@ int main(int argc, char * argv[]) {
 
   int optMaxIters = 10*refMaxIters;
   int optNiters = refMaxIters;
-  double opt_worst_time = shmem_malloc(sizeof(double));
+  double *opt_worst_time = NULL;
+#ifndef HPCG_NO_MPI
+  opt_worst_time = malloc(sizeof(double));
+#endif
+#if HPCG_OSHMEM
+
+  opt_worst_time = shmem_malloc(sizeof(double));
+#endif
+
   *opt_worst_time = 0.0;
 
   std::vector< double > opt_times(9,0.0);
@@ -295,11 +303,18 @@ int main(int argc, char * argv[]) {
     if (niters > optNiters) optNiters = niters;
 
     double current_time = opt_times[0] - last_cummulative_time;
-    if (current_time > (*opt_worst_time)) opt_worst_time[0] = current_time;
+    if (current_time > (opt_worst_time[0])) opt_worst_time[0] = current_time;
   }
 
 #ifndef HPCG_NO_MPI
 // Get the absolute worst time across all MPI ranks (time in CG can be different)
+  double local_opt_worst_time = opt_worst_time;
+//  *local_opt_worst_time = *opt_worst_time;
+//  shmem_double_max_reduce(SHMEM_TEAM_WORLD, opt_worst_time, local_opt_worst_time, 1); 
+  MPI_Allreduce(&local_opt_worst_time, opt_worst_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+#endif
+
+#ifdef HPCG_OSHMEM
   double *local_opt_worst_time = shmem_malloc(2*sizeof(double)); //= opt_worst_time;
   *local_opt_worst_time = *opt_worst_time;
   shmem_double_max_reduce(SHMEM_TEAM_WORLD, opt_worst_time, local_opt_worst_time, 1); 
@@ -329,6 +344,14 @@ int main(int argc, char * argv[]) {
     HPCG_fout << "Projected running time: " << total_runtime << " seconds" << endl;
     HPCG_fout << "Number of CG sets: " << numberOfCgSets << endl;
   }
+#endif
+
+#ifndef HPCG_NO_MPI
+  free (opt_worst_time);
+#endif
+
+#ifdef HPCG_OSHMEM
+  shmem_free(opt_worst_time);
 #endif
 
   /* This is the timed run for a specified amount of time. */
@@ -382,7 +405,12 @@ int main(int argc, char * argv[]) {
 
   // Finish up
 #ifndef HPCG_NO_MPI
-  shmem_finalize(); //MPI_Finalize();
+  MPI_Finalize();
 #endif
+
+#ifdef HPCG_OSHMEM
+  shmem_finalize();
+#endif
+
   return 0;
 }

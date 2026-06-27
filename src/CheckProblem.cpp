@@ -19,7 +19,7 @@
  */
 
 #ifndef HPCG_NO_MPI
-#include <shmem.h>
+#include <mpi.h>
 #endif
 
 #ifdef HPCG_SHMEM
@@ -157,7 +157,7 @@ void CheckProblem(SparseMatrix & A, Vector * b, Vector * x, Vector * xexact) {
   shmem_free(local_non_zeros);
 #else
   long long *lnnz = shmem_malloc(sizeof(long)), 
-       *global_nnz = shmem_malloc=(sizeof(long));
+       *global_nnz = shmem_malloc(sizeof(long));
   *lnnz = localNumberOfNonzeros;
   shmem_long_long(SHMEM_TEAM_WORLD, global_nnz, lnnz, 1);
   totalNumberOfNonzeros = global_nnz;

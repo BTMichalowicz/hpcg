@@ -19,7 +19,7 @@
  */
 
 #ifndef HPCG_NO_MPI
-#include <shmem.h>
+#include <mpi.h>
 #include <map>
 #include <set>
 #endif
@@ -61,7 +61,7 @@ void SetupHalo_ref(SparseMatrix & A) {
   global_int_t ** mtxIndG = A.mtxIndG;
   local_int_t ** mtxIndL = A.mtxIndL;
 
-#ifdef HPCG_NO_MPI  // In the non-MPI case we simply copy global indices to local index storage
+#ifdef HPCG_NO_MPI && !defined (HPCG_OSHMEM) // In the non-MPI case we simply copy global indices to local index storage
 #ifndef HPCG_NO_OPENMP
   #pragma omp parallel for
 #endif
@@ -70,7 +70,7 @@ void SetupHalo_ref(SparseMatrix & A) {
     for (int j=0; j<cur_nnz; j++) mtxIndL[i][j] = mtxIndG[i][j];
   }
 
-#else // Run this section if compiling for MPI
+#elif !defined(HPCG_NO_MPI) || defined(HPCG_OSHMEM) // Run this section if compiling for MPI
 
   // Scan global IDs of the nonzeros in the matrix.  Determine if the column ID matches a row ID.  If not:
   // 1) We call the ComputeRankOfMatrixRow function, which tells us the rank of the processor owning the row ID.
@@ -122,8 +122,18 @@ void SetupHalo_ref(SparseMatrix & A) {
 #endif
 
   // Build the arrays and lists needed by the ExchangeHalo function.
-  double * sendBuffer = new double[totalToBeSent];
+#ifndef HPCG_NO_MPI
+  double *sendBuffer = new double[totalToBeSent];
   local_int_t * elementsToSend = new local_int_t[totalToBeSent];
+
+#elif defined(HPCG_OSHMEM)
+  double * sendBuffer = shmem_malloc(sizeof(double) * totalToBeSent); //new double[totalToBeSent];
+  local_int_t * elementsToSend = shmem_malloc(sizeof(int) * totalToBeSend); //new local_int_t[totalToBeSent];
+#else
+  double *sendBuffer = new double[totalToBeSent];
+  local_int_t * elementsToSend = new local_int_t[totalToBeSent];
+#endif
+
   int * neighbors = new int[sendList.size()];
   local_int_t * receiveLength = new local_int_t[receiveList.size()];
   local_int_t * sendLength = new local_int_t[sendList.size()];

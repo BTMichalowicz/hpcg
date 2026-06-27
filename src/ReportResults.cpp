@@ -19,7 +19,7 @@
  */
 
 #ifndef HPCG_NO_MPI
-#include <shmem.h>
+#include <mpi.h>
 #endif
 
 #ifdef HPCG_OSHMEM
@@ -68,6 +68,27 @@ void ReportResults(const SparseMatrix & A, int numberOfMgLevels, int numberOfCgS
   MPI_Allreduce(&t4, &t4max, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   MPI_Allreduce(&t4, &t4avg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   t4avg = t4avg/((double) A.geom->size);
+#endif
+
+#ifdef HPCG_OSHMEM
+  double *t4 = shmem_malloc(sizeof(double));
+  *t4 = times[4];
+  double *tmin = shmem_malloc(sizeof(double));
+  double *tmax = shmem_malloc(sizeof(double));
+  double *tavg = shmem_malloc(sizeof(double));
+
+  shmem_double_min_reduce(SHMEM_TEAM_WORLD, tmin, t4, 1);
+  shmem_double_max_reduce(SHMEM_TEAM_WORLD, tmax, t4, 1);
+  shmem_double_sum_reduce(SHMEM_TEAM_WORLD, tavg, t4, 1);
+
+  double t4min = *tmin;
+  double t4max = *tmax;
+  double t4avg = (*t4avg)/((double) A.geom->size);
+
+  //shmem_free(tmin);
+  //shmem_free(tmax);
+  //shmem_free(tavg);
+
 #endif
 
   if (A.geom->rank==0) { // Only PE 0 needs to compute and report timing results
@@ -371,6 +392,18 @@ void ReportResults(const SparseMatrix & A, int numberOfMgLevels, int numberOfCgS
     //doc.get("Sparse Operations Overheads")->add("Halo exchange time (sec)", (times[6]));
     //doc.get("Sparse Operations Overheads")->add("Halo exchange as percentage of SpMV time", (times[6])/totalSparseMVTime*100.0);
 #endif
+
+
+#ifdef HPCG_OSHMEM
+    doc.add("DDOT Timing Variations","");
+    doc.get("DDOT Timing Variations")->add("Min DDOT SHMEM_Allreduce time",t4min);
+    doc.get("DDOT Timing Variations")->add("Max DDOT SHMEM_Allreduce time",t4max);
+    doc.get("DDOT Timing Variations")->add("Avg DDOT SHMEM_Allreduce time",t4avg);
+
+    //doc.get("Sparse Operations Overheads")->add("Halo exchange time (sec)", (times[6]));
+    //doc.get("Sparse Operations Overheads")->add("Halo exchange as percentage of SpMV time", (times[6])/totalSparseMVTime*100.0);
+#endif
+
     doc.add("Final Summary","");
     bool isValidRun = (testcg_data.count_fail==0) && (testsymmetry_data.count_fail==0) && (testnorms_data.pass) && (!global_failure);
     if (isValidRun) {

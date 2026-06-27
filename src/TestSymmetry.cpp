@@ -20,7 +20,7 @@
 
 // The MPI include must be first for Windows platforms
 #ifndef HPCG_NO_MPI
-#include <shmem.h>
+#include <mpi.h>
 #endif
 #ifdef HPCG_OSHMEM
 #include <shmem.h>

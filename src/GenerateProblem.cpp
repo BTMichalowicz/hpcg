@@ -19,7 +19,7 @@
  */
 
 #ifndef HPCG_NO_MPI
-#include <shmem.h>
+#include <mpi.h>
 #endif
 
 #ifdef HPCG_OSHMEM

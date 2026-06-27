@@ -20,7 +20,7 @@
 
 // Compile this routine only if running with MPI
 #ifndef HPCG_NO_MPI
-#include <shmem.h>
+#include <mpi.h>
 #include "Geometry.hpp"
 #include "ExchangeHalo.hpp"
 #include <cstdlib>
@@ -47,8 +47,8 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   double * const xv = x.values;
 
   int size, rank; // Number of MPI processes, My process ID
-  size = shmem_n_pes(); //MPI_Comm_size(MPI_COMM_WORLD, &size);
-  rank = shmem_my_pe(); //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   //
   //  first post receives, these are immediate receives
@@ -58,7 +58,7 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
 
 //  int MPI_MY_TAG = 99;
 
-//  MPI_Request * request = new MPI_Request[num_neighbors];
+  MPI_Request * request = new MPI_Request[num_neighbors];
 
   //
   // Externals are at end of locals
@@ -68,11 +68,11 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   // Post receives first
   // TODO: Thread this loop
 
-  /*for (int i = 0; i < num_neighbors; i++) {
+  for (int i = 0; i < num_neighbors; i++) {
     local_int_t n_recv = receiveLength[i];
     MPI_Irecv(x_external, n_recv, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD, request+i);
     x_external += n_recv;
-  }*/
+  }
 
 
   //
@@ -90,7 +90,7 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   for (int i = 0; i < num_neighbors; i++) {
     local_int_t n_send = sendLength[i];
     shmem_double_put(sendBuffer, x_external, n_Send, neighbors[i]);
-//    MPI_Send(sendBuffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
+    MPI_Send(sendBuffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
     sendBuffer += n_send;
   }
 
@@ -98,15 +98,15 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   // Complete the reads issued above
   //
 
-/*  MPI_Status status;
+  MPI_Status status;
   // TODO: Thread this loop
   for (int i = 0; i < num_neighbors; i++) {
     if ( MPI_Wait(request+i, &status) ) {
       std::exit(-1); // TODO: have better error exit
     }
   }
-*/
-//  delete [] request;
+
+  delete [] request;
 
   return;
 }
@@ -166,11 +166,11 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
 
   // Post receives first
   // TODO: Thread this loop
-  for (int i = 0; i < num_neighbors; i++) {
-    local_int_t n_recv = receiveLength[i];
-    MPI_Irecv(x_external, n_recv, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD, request+i);
-    x_external += n_recv;
-  }//
+//  for (int i = 0; i < num_neighbors; i++) {
+//    local_int_t n_recv = receiveLength[i];
+//    MPI_Irecv(x_external, n_recv, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD, request+i);
+//    x_external += n_recv;
+//  }//
 
 
   //
@@ -178,6 +178,7 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   //
 
   // TODO: Thread this loop
+#pragma omp parallel for
   for (local_int_t i=0; i<totalToBeSent; i++) sendBuffer[i] = xv[elementsToSend[i]];
 
   //
@@ -187,7 +188,8 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   // TODO: Thread this loop
   for (int i = 0; i < num_neighbors; i++) {
     local_int_t n_send = sendLength[i];
-    MPI_Send(sendBuffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
+    shmem_double_put(sendBuffer, x_external, n_send, neighbors[i]);
+//    MPI_Send(sendBuffer, n_send, MPI_DOUBLE, neighbors[i], MPI_MY_TAG, MPI_COMM_WORLD);
     sendBuffer += n_send;
   }
 
@@ -195,7 +197,7 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   // Complete the reads issued above
   //
 
-  MPI_Status status;
+/*  MPI_Status status;
   // TODO: Thread this loop
   for (int i = 0; i < num_neighbors; i++) {
     if ( MPI_Wait(request+i, &status) ) {
@@ -204,6 +206,7 @@ void ExchangeHalo(const SparseMatrix & A, Vector & x) {
   }
 
   delete [] request;
+*/
 
   return;
 }

@@ -19,7 +19,7 @@
  */
 
 #ifndef HPCG_NO_MPI
-#include <shmem.h>
+#include <mpi.h>
 #include "mytimer.hpp"
 #endif
 #ifdef HPCG_OSHMEM
