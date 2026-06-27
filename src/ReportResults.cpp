@@ -71,11 +71,11 @@ void ReportResults(const SparseMatrix & A, int numberOfMgLevels, int numberOfCgS
 #endif
 
 #ifdef HPCG_OSHMEM
-  double *t4 = shmem_malloc(sizeof(double));
+  double *t4 = (double *)shmem_malloc(sizeof(double));
   *t4 = times[4];
-  double *tmin = shmem_malloc(sizeof(double));
-  double *tmax = shmem_malloc(sizeof(double));
-  double *tavg = shmem_malloc(sizeof(double));
+  double *tmin =(double *)shmem_malloc(sizeof(double));
+  double *tmax = (double *)shmem_malloc(sizeof(double));
+  double *tavg = (double *)shmem_malloc(sizeof(double));
 
   shmem_double_min_reduce(SHMEM_TEAM_WORLD, tmin, t4, 1);
   shmem_double_max_reduce(SHMEM_TEAM_WORLD, tmax, t4, 1);
@@ -83,7 +83,7 @@ void ReportResults(const SparseMatrix & A, int numberOfMgLevels, int numberOfCgS
 
   double t4min = *tmin;
   double t4max = *tmax;
-  double t4avg = (*t4avg)/((double) A.geom->size);
+  double t4avg = (*tavg)/((double) A.geom->size);
 
   //shmem_free(tmin);
   //shmem_free(tmax);

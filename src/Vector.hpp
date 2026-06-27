@@ -24,6 +24,10 @@
 #include <cstdlib>
 #include "Geometry.hpp"
 
+#ifdef HPCG_OSHMEM
+#include <shmem.h>
+#endif
+
 struct Vector_STRUCT {
   local_int_t localLength;  //!< length of local portion of the vector
   double * values;          //!< array of values
@@ -44,7 +48,11 @@ typedef struct Vector_STRUCT Vector;
  */
 inline void InitializeVector(Vector & v, local_int_t localLength) {
   v.localLength = localLength;
+#ifndef HPCG_OSHMEM
   v.values = new double[localLength];
+#else
+  v.values = (double *)shmem_malloc(localLength * sizeof(double)); //new double[localLength];
+#endif 
   v.optimizationData = 0;
   return;
 }
@@ -106,8 +114,11 @@ inline void CopyVector(const Vector & v, Vector & w) {
   @param[in] A the known system matrix
  */
 inline void DeleteVector(Vector & v) {
-
-  delete [] v.values;
+#ifdef HPCG_OSHMEM
+  shmem_free(v.values);
+#else
+  delete []v.values;
+#endif
   v.localLength = 0;
   return;
 }

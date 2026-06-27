@@ -48,7 +48,7 @@ CheckAspectRatio(double smallest_ratio, int x, int y, int z, const char *what, b
     MPI_Abort(MPI_COMM_WORLD, 127);
 #endif
 #ifdef HPCG_OSHMEM
-    shmem_global_exit(127);
+    exit(127);
 #endif
 
     return 127;

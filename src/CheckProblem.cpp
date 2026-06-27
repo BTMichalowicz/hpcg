@@ -147,8 +147,8 @@ void CheckProblem(SparseMatrix & A, Vector * b, Vector * x, Vector * xexact) {
 
 #ifdef HPCG_OSHMEM
 #ifdef HPCG_NO_LONG_LONG
-  int *tot_non_zeros = shmem_malloc(sizeof(int));
-  const int *local_non_zeros = shmem_malloc(sizeof(int));
+  int *tot_non_zeros = (int *)shmem_malloc(sizeof(int));
+  const int *local_non_zeros =  (const int *)shmem_malloc(sizeof(int));
   *local_non_zeros = localNumberOfNonzeros;
   shmem_int_sum_reduce(SHMEM_TEAM_WORLD, tot_non_zeros, local_non_zeros, 1);
   totalNumberOfNonzeros = *tot_non_zeros;
@@ -156,11 +156,11 @@ void CheckProblem(SparseMatrix & A, Vector * b, Vector * x, Vector * xexact) {
   shmem_free(tot_non_zeros);
   shmem_free(local_non_zeros);
 #else
-  long long *lnnz = shmem_malloc(sizeof(long)), 
-       *global_nnz = shmem_malloc(sizeof(long));
+  long long *lnnz = (long long *)shmem_malloc(sizeof(long)), 
+       *global_nnz = (long long *)shmem_malloc(sizeof(long));
   *lnnz = localNumberOfNonzeros;
-  shmem_long_long(SHMEM_TEAM_WORLD, global_nnz, lnnz, 1);
-  totalNumberOfNonzeros = global_nnz;
+  shmem_longlong_sum_reduce(SHMEM_TEAM_WORLD, global_nnz, lnnz, 1);
+  totalNumberOfNonzeros = *global_nnz;
   shmem_free(lnnz);
   shmem_free(global_nnz);
   goto asserts;

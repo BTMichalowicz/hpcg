@@ -283,7 +283,7 @@ int main(int argc, char * argv[]) {
 #endif
 #if HPCG_OSHMEM
 
-  opt_worst_time = shmem_malloc(sizeof(double));
+  opt_worst_time = (double *)shmem_malloc(sizeof(double));
 #endif
 
   *opt_worst_time = 0.0;
@@ -315,7 +315,7 @@ int main(int argc, char * argv[]) {
 #endif
 
 #ifdef HPCG_OSHMEM
-  double *local_opt_worst_time = shmem_malloc(2*sizeof(double)); //= opt_worst_time;
+  double *local_opt_worst_time = (double *)shmem_malloc(2*sizeof(double)); //= opt_worst_time;
   *local_opt_worst_time = *opt_worst_time;
   shmem_double_max_reduce(SHMEM_TEAM_WORLD, opt_worst_time, local_opt_worst_time, 1); 
   //MPI_Allreduce(&local_opt_worst_time, &opt_worst_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);

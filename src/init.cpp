@@ -128,7 +128,13 @@ HPCG_Init(int * argc_p, char ** *argv_p, HPCG_Params & params) {
 #endif
 
 #ifdef HPCG_OSHMEM
-  shmem_int_broadcast(SHMEM_TEAM_WORLD, iparams, iparams, nparams);
+
+  if (broadcastParams) {
+
+    //shmem_int_broadcast(SHMEM_TEAM_WORLD, iparams, iparams, nparams);
+    shmem_int_broadcast(SHMEM_TEAM_WORLD, iparams, iparams, nparams,0);
+  }
+
 #endif
 
   params.nx = iparams[0];

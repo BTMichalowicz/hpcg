@@ -76,11 +76,11 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector & x, const Vector & 
   result = global_result;
   time_allreduce += mytimer() - t0;
 #elif defined(HPCG_OSHMEM)
-  double t0 = mytime();
-  double *global_result = shmem_malloc(sizeof(double));
-  double *local_result1 = shmem_malloc(sizeof(double));
+  double t0 = mytimer();
+  double *global_result = (double *)shmem_malloc(sizeof(double));
+  double *local_result1 = (double *)shmem_malloc(sizeof(double));
   *local_result1 = local_result;
-  shmem_double_sum_resuce(SHMEM_TEAM_WORLD, global_result, local_result1, 1);
+  shmem_double_sum_reduce(SHMEM_TEAM_WORLD, global_result, local_result1, 1);
   result = *global_result;
   shmem_free(global_result);
   shmem_free(local_result1);

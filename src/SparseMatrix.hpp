@@ -63,7 +63,7 @@ struct SparseMatrix_STRUCT {
   mutable MGData * mgData; // Pointer to the coarse level data for this fine matrix
   void * optimizationData;  // pointer that can be used to store implementation-specific data
 
-#ifndef HPCG_NO_MPI
+#if !defined (HPCG_NO_MPI) || defined(HPCG_OSHMEM)
   local_int_t numberOfExternalValues; //!< number of entries that are external to this process
   int numberOfSendNeighbors; //!< number of neighboring processes that will be send local data
   local_int_t totalToBeSent; //!< total number of entries to be sent
